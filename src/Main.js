@@ -1,81 +1,100 @@
 import './App.css';
 import React, {useState, useEffect} from "react";
+import axios from 'axios';
+import { size } from 'lodash'
+import Loader from "react-loader-spinner";
 import Card from './components/Card.js'
 import AddFeature from './components/AddFeature.js'
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import { DataTable } from './data.js'
+import Cookies from 'js-cookie'
+
+export const isAuth = () => {
+  const token = Cookies.get('token')
+  if(token) {
+    return true;
+  }
+  return false;
+} 
+
 
 const Main = () => {
-  const [sortData, setSortData] = useState()
-  const [featureFilter, setFeatureFilter] = useState('')
-  const [filterData, setFilterData] = useState({})
-  const [featureData, setFeatureData] = useState(DataTable || [])
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [cashData, setCashData] = React.useState([]);
+  const [sortBy, setSortBy] = useState('')
+  const [order, setOrder] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [featureData, setFeatureData] = useState([])
 
-  console.log(filterData, sortData, DataTable);
-
-    const addFeature = (data) => {
-    setFeatureData( arr => [...arr, data]);
-    console.log(data)
-    // return setCounter(comment);
-  }
-
-  const sortHandle = (e) => {
-    setSortData(e.target.value)
+  const orderHandle = (e) => {
+    setOrder(e.target.value)
     console.log(e.target.value);
   }
 
-  const filterWithtitle = (data) => {
-       setFeatureData(
-         featureData.filter((item) =>
-          item.title.toLowerCase().includes(data.toLowerCase())
-        )
-       );
+  const filterWithtitle = () => {
+    const filterdata = featureData.filter((item) =>
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      item.desc.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    setFeatureData(size(filterdata) && size(searchTerm) ? filterdata : cashData)
   }
 
-  const filterHandle = (e) => {
-    setFilterData({option: e.target.value})
+  const sortHandle = (e) => {
+    setSortBy(e.target.value)
   }
 
-  // const FormatData = (features) => {
-  //   features.map(feature => {
-  //     const featureObj = {};
-  //     featureObj.title
-  //   })
-  // }
+  const formetData = (featutes) => {
+    setFeatureData(featutes)
+    setCashData(featutes)
+  }
 
-  //   useEffect(() => {
-  //     setFeatureData(
-  //       featureData.filter((item) =>
-  //         item.title.toLowerCase().includes(featureFilter.toLowerCase())
-  //       )
-  //     );
-  // }, [featureData]);
+  const getFeatureData = () => {
+    setLoading(true);
+    axios.get(`https://feature-app-auth.herokuapp.com/api/post?sortBy=${sortBy}&order=${order}`)
+    .then(res => {
+      formetData(res?.data)
+      setLoading(false);
+    })
+  }
+
+  useEffect( () => {
+    filterWithtitle()
+    // eslint-disable-next-line
+  }, [searchTerm])
+
+  useEffect(() => { 
+    isAuth()
+}, []);
+
+    useEffect(() => { 
+      getFeatureData()
+      // eslint-disable-next-line
+  }, [order, sortBy]);
 
   return (
     <Box>
       <Grid container spacing={2} style={{marginTop: "-40"}}>
         <Grid item xs={4}>
-          <select onChange = {sortHandle} class="selectpicker container mt-4 text-center border p-2">
-              <option value="1">Assending</option>
-              <option value="-1">Decending</option>
+          <select onChange = {orderHandle} class="selectpicker container mt-4 text-center border p-2 bg-light">
+              <option value="dsc">Assending</option>
+              <option value="asc">Decending</option>
           </select>
         </Grid>
         <Grid item xs={8}>
-           <div class="container mt-4 text-center border p-2">
+           <div class="container mt-4 text-center border p-2 bg-light">
              <div class="form-check-inline">
               <label class="form-check-label">
-                <input value="vote" onChange = {filterHandle} type="radio" class="form-check-input" name="optradio" />Vote
+                <input value="like" onChange = {sortHandle} type="radio" class="form-check-input" name="optradio" />Vote
               </label>
             </div>
             <div class="form-check-inline">
               <label class="form-check-label">
-                <input value="comment" onChange = {filterHandle} type="radio" class="form-check-input" name="optradio" />Comment
+                <input value="comment" onChange = {sortHandle} type="radio" class="form-check-input" name="optradio" />Comment
               </label>
             </div>
             <div class="form-check-inline disabled">
               <label class="form-check-label">
-                <input onChange = {filterHandle} type="radio" class="form-check-input" name="optradio" />Option 3
+                <input value="updatedAt" onChange = {sortHandle} type="radio" class="form-check-input" name="optradio" />Created By
               </label>
             </div>
           </div>
@@ -84,10 +103,18 @@ const Main = () => {
 
       <Grid container spacing={2} style={{marginTop: "-40"}}>
         <Grid item xs={4}>
-          <AddFeature addFeature={addFeature} filterWithtitle= {filterWithtitle}/>
+          <AddFeature
+            setLoading={setLoading}
+            getFeatureData={getFeatureData}
+            filterWithtitle= {filterWithtitle}
+            setSearchTerm={setSearchTerm}
+          />
         </Grid>
         <Grid item xs={8}>
-          <Card featureData={featureData}/>
+          {loading ?
+            <Loader style={{ marginLeft: "40%" , marginTop: "20%" }} type="ThreeDots" color="#00BFFF" />
+            : <Card featureData={featureData}/>
+          }
         </Grid>
       </Grid>
     </Box>

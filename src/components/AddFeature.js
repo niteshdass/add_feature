@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import axios from 'axios';
+import { isAuth } from '../Main.js'
+import { ToastContainer, toast } from 'react-toastify';
+import { useHistory } from "react-router-dom";
+import 'react-toastify/dist/ReactToastify.css';
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function App({addFeature, filterWithtitle}) {
+function App({getFeatureData, setLoading, setSearchTerm}) {
+  const history = useHistory();
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
+  // eslint-disable-next-line
   const [file, setFile] = useState(null);
   const [titleError, setTitleError] = useState("");
   const [descError, setDescError] = useState("");
@@ -35,25 +42,51 @@ function App({addFeature, filterWithtitle}) {
   };
   const handleTitle = (e) => {
       setTitle(e.target.value)
-      filterWithtitle(e.target.value)
+      setSearchTerm(e.target.value)
   }
+  const success = () => toast("Feature add successfully!");
+  const error = () => toast("Something went wrong!");
+  const authError = () => toast("Please signin!");
   const loginSubmit = (e) => {
     e.preventDefault();
-    handleValidation()
-    const updatedData = {
-        id: 9,
-        title,
-        desc,
-        image: file,
-        createdAt: '2012-01-26T13:51:50.417-07:00',
-        like: [],
-        comments: []
+    if (isAuth()) {
+      handleValidation()
+      if(handleValidation) {
+        setLoading(true);
+        var bodyFormData = new FormData();
+        bodyFormData.append('title', title);
+        bodyFormData.append('desc', desc);
+        bodyFormData.append('image', file);
+        axios({
+          method: "post",
+          url: `https://feature-app-auth.herokuapp.com/api/create/post`,
+          data: bodyFormData,
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+          .then(function (response) {
+            //handle success
+            getFeatureData();
+            success();
+            console.log(response);
+          })
+          .catch(function (response) {
+            //handle error
+            setLoading(false);
+            getFeatureData();
+            error();
+            console.log(response);
+          });
       }
-      addFeature(updatedData)
+    } else {
+      history.push('/')
+      authError()
+    }
+    
   };
 
   return (
     <div className="App">
+      <ToastContainer />
       <div className="container">
         <div className="row d-flexjustify-content-center">
           <div className="col-md-10 border mt-4" style={{marginLeft: "4%"}}>
@@ -86,7 +119,7 @@ function App({addFeature, filterWithtitle}) {
                   {descError}
                 </small>
               </div>
-              <div className="form-group">
+              {/* <div className="form-group">
                 <input
                   type="file"
                   className="form-control"
@@ -95,8 +128,8 @@ function App({addFeature, filterWithtitle}) {
                   aria-describedby="emailHelp"
                   onChange={(event) => setFile(event.target.files[0])}
                 />
-              </div>
-              <button type="submit" className="btn btn-primary">
+              </div> */}
+              <button type="submit" className="btn btn-primary disabled">
                 Submit
               </button>
             </form>

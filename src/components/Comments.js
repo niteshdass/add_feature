@@ -1,14 +1,11 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import moment from 'moment'
+import Cookies from 'js-cookie'
 
 import { Divider, Avatar, Grid, Paper } from "@material-ui/core";
 
-
-const imgLink =
-  "https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260";
-const Comment = ({comments}) => {
-  console.log(comments)
+  const Comment = ({comments = []}) => {
+  const userId = Cookies.get('id');
   return (
     <div style={{ padding: 14 }} className="App">
       <h1>Comments</h1>
@@ -16,7 +13,7 @@ const Comment = ({comments}) => {
        <Paper style={{ padding: "40px 20px" }}>
         {comments.map( comment => (
           <>
-            <Grid container wrap="nowrap" style={{ background: comment?.id === "1" ? "azure" : ""}}  spacing={2}>
+            <Grid container wrap="nowrap" style={{ background: comment?.userId === userId ? "azure" : ""}}  spacing={2}>
               <Grid item>
                 <Avatar alt="Remy Sharp" src={comment?.images} />
               </Grid>

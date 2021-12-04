@@ -1,6 +1,9 @@
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 import Modal from 'react-modal';
+import axios from 'axios';
+import "bootstrap/dist/css/bootstrap.min.css";
+import 'react-toastify/dist/ReactToastify.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const customStyles = {
   content: {
@@ -13,25 +16,27 @@ const customStyles = {
   },
 };
 
-// Make sure to bind modal to your appElement (https://reactcommunity.org/react-modal/accessibility/)
-// Modal.setAppElement('#yourAppElement');
 
-const FormModal =({dataItem}) => {
-  console.log(dataItem)
-  let subtitle;
+const FormModal =({dataItem, setLoading, fetchData}) => {
   const [modalIsOpen, setIsOpen] = React.useState(false);
-    const [password, setPassword] = useState('pass');
-  const [email, setEmail] = useState(dataItem?.name);
-  const [passwordError, setpasswordError] = useState("");
-  const [emailError, setemailError] = useState("");
+  const [title, setTitle] = useState(dataItem?.title);
 
   function openModal() {
     setIsOpen(true);
   }
 
-    const loginSubmit = (e) => {
+  const loginSubmit = (e) => {
     e.preventDefault();
-    console.log(email, password)
+    console.log(title)
+    const updateData = {
+      _id: dataItem?._id,
+      title
+    };
+    axios.put('https://feature-app-auth.herokuapp.com/api/update', updateData)
+        .then(response => {
+          setLoading(false)
+          fetchData()
+        });
   };
 
   function closeModal() {
@@ -50,27 +55,16 @@ const FormModal =({dataItem}) => {
             <form id="loginform" className="p-3" onSubmit={loginSubmit}>
               <div className="form-group">
                 <input
-                  type="email"
+                  type="text"
                   className="form-control"
                   id="EmailInput"
                   name="EmailInput"
                   aria-describedby="emailHelp"
-                  value={email}
-                  placeholder="Enter email"
-                  onChange={(event) => setEmail(event.target.value)}
+                  value={title}
+                  placeholder="Enter title"
+                  onChange={(event) => setTitle(event.target.value)}
                 />
         
-              </div>
-              <div className="form-group">
-                <label>Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="exampleInputPassword1"
-                  value={password}
-                  placeholder="Password"
-                  onChange={(event) => setPassword(event.target.value)}
-                />
               </div>
               <button type="submit" className="btn btn-primary">
                 Submit

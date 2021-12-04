@@ -2,27 +2,41 @@ import axios from 'axios';
 import { useState } from "react";
 import React from 'react';
 import { useEffect } from "react";
+import Loader from "react-loader-spinner";
+import "bootstrap/dist/css/bootstrap.min.css";
 import ModalForm from './FormModal.js'
 
 const UserList = () => {
-  const [ listOfUSer, setListOfUSer ] = useState( [] )
-  const [modalIsOpen, setIsOpen] = React.useState(false);
-  const [ update, setUpdate ] = useState(true)
-  useEffect( () => {
-    axios.get( `https://jsonplaceholder.typicode.com/users` )
-      .then( res => {
-        const persons = res.data;
-        setListOfUSer( persons );
-      })
-
-  }, []
-  )
-
-  const handleUpdateView = () => {
-  	setUpdate(!update)
+  const [ features, setFeatures ] = useState( [] )
+  const [loading, setLoading] = useState(false);
+  const fetchData = () => {
+    setLoading(true)
+    axios.get( `https://feature-app-auth.herokuapp.com/api/post` )
+    .then( res => {
+      const feature = res.data;
+      setFeatures(feature);
+      setLoading(false)
+    })
   }
 
 
+  const handleStatusUpdate = (statusData, val) => {
+    const { _id} = statusData
+    const updateData = {
+      _id,
+      status: val
+    };
+    console.log(updateData)
+    axios.put('https://feature-app-auth.herokuapp.com/api/update', updateData)
+        .then(response => {
+          setLoading(false)
+          fetchData()
+        });
+  }
+
+  useEffect( () => {
+    fetchData()
+  }, [])
 
   return (
   			 <div className="container py-5">
@@ -33,31 +47,45 @@ const UserList = () => {
         <div className="col-lg-10 mx-auto">
           <div className="card rounded shadow border-0">
             <div className="card-body p-5 bg-white rounded">
-              <div className="table-responsive">
-                <table id="example" style={{ width: "100%" }} className="table table-striped table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>User Name</th>
-                      <th>Email</th>
-                      <th>Address</th>
-                      <th>Company</th>
-                      <th>Website</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listOfUSer.map( person =>
-                      <tr>
-                        <td>{person.name}</td>
-                        <td>{person.username}</td>
-                        <td>{person.email}</td>
-                        <td>{person.address.street}</td>
-                        <td>{person.company.name}</td>
-                         <ModalForm dataItem={person}/>
-                      </tr> )}
-                  </tbody>
-                </table>
-              </div>
+              {
+                loading ? (
+                  <Loader style={{ marginLeft: "40%" , marginTop: "10%" }} type="ThreeDots" color="#00BFFF" />
+                ) : (
+                  <div className="table-responsive">
+                    <table id="example" style={{ width: "100%" }} className="table table-striped table-bordered">
+                      <thead>
+                        <tr>
+                          <th>title</th>
+                          <th>Like</th>
+                          <th>Comment</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {features.map( feature =>
+                          <tr>
+                            <td>{feature?.title}</td>
+                            <td>{feature?.like}</td>
+                            <td>{feature?.comment}</td>
+                            <td>{feature?.status === 0 ? 'Pending' : 'Accepted'}</td>
+                            <td>
+                              {
+                                feature?.status === 0 ? (
+                                  <button onClick={() => handleStatusUpdate(feature, 1)} class="btn btn-primary"> Accept </button>
+                                ) : (
+                                  <button onClick={() => handleStatusUpdate(feature, "0")} class="btn btn-info">Deactivate</button>
+                                )
+                              }
+                              <ModalForm dataItem={feature} fetchData={fetchData} setLoading={setLoading}/>
+                            </td>
+                          </tr> )}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              }
+
             </div>
           </div>
         </div>
